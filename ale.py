@@ -100,35 +100,52 @@ class Ale:
             missing_from_self = cols_other-cols_self
             missing_from_other = cols_self-cols_other
 
+            # Return number of missing, list of missing from self, list of missing from other
             return (len(missing_from_self)+len(missing_from_other)), missing_from_self, missing_from_other
 
         return merged_ale
 
-    def merge(self, other, match_on=["Start"], inplace=False, return_errors=True):
+    def merge(self, other, match_on=["Tape", "Start"], inplace=False, return_errors=False):
 
         """add an ALE to this one by column"""
         merged_ale = Ale()
 
         if self.dataframe.empty:
-            merged_ale = other.dataframe.copy()
+            merged_ale.dataframe = other.dataframe.copy()
 
         else:
-            merged_ale = pandas.merge(self.dataframe, other.dataframe, how="outer", on=match_on, suffixes=("", "_2"))
+            merged_ale.dataframe = pandas.merge(self.dataframe, other.dataframe, how="outer", on=match_on, suffixes=("", "_%2"), indicator="%from_ale")
 
         if inplace:
             self.dataframe = merged_ale.dataframe
 
-        # if return_errors:
+        if return_errors:
 
-        match_self = self.dataframe[match_on]
-        match_other = other.dataframe[match_on]
+            # check for rows that only exist in one dataframe
 
-        diff_df = pandas.merge(match_self, match_other, how='outer', indicator='Exist')
-        diff_df = diff_df.loc[diff_df['Exist'] != 'both']
+            diff_df = merged_ale.dataframe.loc[merged_ale.dataframe['%from_ale'] != 'both'].copy()
 
-        print(diff_df)
+            diff_df["Match"] = ""
+            diff_df.reset_index(inplace=True)
 
-        return diff_df
+            for col in match_on:
+                diff_df["Match"] = diff_df["Match"]+" "+diff_df[col]
+
+            left_only = [value for index, value in enumerate(diff_df["Match"]) if diff_df["%from_ale"][index] == "left_only"]
+            right_only = [value for index, value in enumerate(diff_df["Match"]) if diff_df["%from_ale"][index] == "right_only"]
+
+            # check for columns that are duplicated
+
+            duplicate_columns = [value.strip("_%2") for value in diff_df.columns if "_%2" in value]
+
+            # Return number of mismatches,  list of items in self with no match, list of items in other with no match
+            return len(diff_df), left_only, right_only, duplicate_columns
+
+        merged_ale.heading = self.heading
+
+        merged_ale.drop('%from_ale')
+
+        return merged_ale
 
     def validate(self):
 
@@ -184,10 +201,13 @@ class Ale:
 
 
 if __name__ == '__main__':
-    ale1 = Ale("Bin 1.ale")
 
-    ale2 = Ale("TEST.ALE")
+    # NOT PART OF THE MODULE, FOR TESTING ONLY
 
-    count, missing_self, missing_other = ale1.append(ale2, return_errors=True)
+    ale1 = Ale("Mini Raw all.ale")
 
-    print(f'{count}\nMissing in {ale1.name}: {missing_self}\nMissing in {ale2.name}: {missing_other}')
+    ale2 = Ale("Mini Raw missing .ale")
+
+    errors, my_left_only, my_right_only, my_dupes = ale1.merge(ale2, return_errors=True)
+
+    print(f'{errors} entries could not be matched\nOnly found in self\n{my_left_only}\nOnly found in other\n{my_right_only}\nDuplicates to deal with\n{my_dupes}')
