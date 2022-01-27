@@ -1,3 +1,6 @@
+import re
+
+import columns as columns
 import pandas
 import os
 import csv
@@ -8,6 +11,7 @@ class Ale:
     def __init__(self, filename: str = None):
 
         self.name = "Empty"
+        self.filename = ""
 
         self.heading = {}
 
@@ -34,10 +38,10 @@ class Ale:
         """load an ALE file into the ALE object"""
 
         if not os.path.isfile(filename):
-
             raise FileNotFoundError(f'{filename} is not a valid file')
 
         self.name = os.path.basename(filename)
+        self.filename = filename
 
         skip_rows = []
 
@@ -81,6 +85,7 @@ class Ale:
     def append(self, other, inplace=False, return_errors=False):
 
         """add an ALE to this one by row"""
+
         merged_ale = Ale()
 
         if self.dataframe.empty:
@@ -93,28 +98,32 @@ class Ale:
             self.dataframe = merged_ale.dataframe
 
         if return_errors:
-
             cols_self = set(self.dataframe.columns)
             cols_other = set(other.dataframe.columns)
 
-            missing_from_self = cols_other-cols_self
-            missing_from_other = cols_self-cols_other
+            missing_from_self = cols_other - cols_self
+            missing_from_other = cols_self - cols_other
 
             # Return number of missing, list of missing from self, list of missing from other
-            return (len(missing_from_self)+len(missing_from_other)), missing_from_self, missing_from_other
+            return (len(missing_from_self) + len(missing_from_other)), missing_from_self, missing_from_other
 
         return merged_ale
 
-    def merge(self, other, match_on=["Tape", "Start"], inplace=False, return_errors=False):
+    def merge(self, other, match_on=None, inplace=False, return_errors=False):
 
         """add an ALE to this one by column"""
+
+        if match_on is None:
+            match_on = ["Tape", "Start"]
+
         merged_ale = Ale()
 
         if self.dataframe.empty:
             merged_ale.dataframe = other.dataframe.copy()
 
         else:
-            merged_ale.dataframe = pandas.merge(self.dataframe, other.dataframe, how="outer", on=match_on, suffixes=("", "_%2"), indicator="%from_ale")
+            merged_ale.dataframe = pandas.merge(self.dataframe, other.dataframe, how="outer", on=match_on,
+                                                suffixes=("", "_%2"), indicator="%from_ale")
 
         if inplace:
             self.dataframe = merged_ale.dataframe
@@ -129,25 +138,30 @@ class Ale:
             diff_df.reset_index(inplace=True)
 
             for col in match_on:
-                diff_df["Match"] = diff_df["Match"]+" "+diff_df[col]
+                diff_df["Match"] = diff_df["Match"] + " " + diff_df[col]
 
-            left_only = [value for index, value in enumerate(diff_df["Match"]) if diff_df["%from_ale"][index] == "left_only"]
-            right_only = [value for index, value in enumerate(diff_df["Match"]) if diff_df["%from_ale"][index] == "right_only"]
+            left_only = [value for index, value in enumerate(diff_df["Match"]) if
+                         diff_df["%from_ale"][index] == "left_only"]
+            right_only = [value for index, value in enumerate(diff_df["Match"]) if
+                          diff_df["%from_ale"][index] == "right_only"]
 
             # check for columns that are duplicated
 
             duplicate_columns = [value.strip("_%2") for value in diff_df.columns if "_%2" in value]
 
-            # Return number of mismatches,  list of items in self with no match, list of items in other with no match
+            # Return number of mismatches,  list of items in self with no match, list of items in other with no match,
+            # list of duplicates
             return len(diff_df), left_only, right_only, duplicate_columns
 
         merged_ale.heading = self.heading
 
-        merged_ale.drop('%from_ale')
+        merged_ale.dataframe.drop(['%from_ale'], axis=1)
 
         return merged_ale
 
     def validate(self):
+
+        """check if this ALE is likely to cause any issues"""
 
         working = self.dataframe.copy()
 
@@ -162,6 +176,7 @@ class Ale:
     def to_csv(self, filename):
 
         """save ALE data to CSV file on disk"""
+
         self.dataframe.to_csv(filename, sep='\t', index=False, header=True, quoting=csv.QUOTE_NONE,
                               columns=list(self.dataframe))
 
@@ -199,15 +214,60 @@ class Ale:
 
         return "\n".join(file_output)
 
+    def sort_columns(self,):
+
+        cols_order = sorted(self.dataframe.columns.to_list())
+        self.dataframe = self.dataframe[cols_order]
+
+        return self.dataframe
+
+    def sort_rows(self, sort_by_columns: []):
+
+        self.dataframe = self.dataframe.sort_index(sort_by_columns)
+
+    def duplicate_col(self, source_column, destination_column, overwrite=True):
+
+        if source_column not in self.dataframe.columns:
+            raise ValueError(f'{source_column} not in ALE')
+
+        if destination_column not in self.dataframe.columns or overwrite:
+            self.dataframe[destination_column] = self.dataframe[source_column]
+
+        else:
+            raise ValueError(f'{destination_column} already in ALE, use overwrite option to set anyway')
+
+    def rename_column(self, column, new_name):
+
+        self.dataframe.rename(columns={column: new_name}, inplace=True)
+
+    def set_column(self, column, value):
+
+        self.dataframe[column] = value
+
+        dynamic_matches = re.findall(r'{[a-zA-Z0-9 _-]+}', value)
+
+        for match_tag in dynamic_matches:
+
+            match_string = match_tag.strip("{").strip("}")
+
+            if match_string not in self.dataframe.columns:
+
+                print(self.dataframe.columns)
+                raise ValueError(f"{match_string} isn't in the dataframe")
+
+            else:
+                for index, value in enumerate(self.dataframe[column]):
+
+                    self.dataframe[column][index] = value.replace(match_tag, self.dataframe[match_string][index])
+
 
 if __name__ == '__main__':
-
     # NOT PART OF THE MODULE, FOR TESTING ONLY
 
     ale1 = Ale("Mini Raw all.ale")
 
     ale2 = Ale("Mini Raw missing .ale")
 
-    errors, my_left_only, my_right_only, my_dupes = ale1.merge(ale2, return_errors=True)
+    ale1.set_column("Aardvark", "{ISO}_{Shutter}")
 
-    print(f'{errors} entries could not be matched\nOnly found in self\n{my_left_only}\nOnly found in other\n{my_right_only}\nDuplicates to deal with\n{my_dupes}')
+    print(ale1)
