@@ -75,10 +75,10 @@ class Ale:
         self.dataframe = pandas.read_csv(filename, sep="\t", skiprows=skip_rows, dtype=str, engine="python",
                                          keep_default_na=False, index_col=0)
 
-        # for value in index_priority:
-        #     if value in self.dataframe:
-        #         self.dataframe.set_index(value, inplace=True)
-        #         break
+        for value in index_priority:
+            if value in self.dataframe:
+                self.dataframe.set_index(value, inplace=True)
+                break
 
         self.dataframe = self.dataframe.loc[:, ~self.dataframe.columns.str.contains('^Unnamed')]
 
@@ -214,7 +214,9 @@ class Ale:
 
         return "\n".join(file_output)
 
-    def sort_columns(self, ):
+    def sort_columns(self):
+
+        """sorts ALE columns alphabetically left to right"""
 
         cols_order = sorted(self.dataframe.columns.to_list())
         self.dataframe = self.dataframe[cols_order]
@@ -222,6 +224,8 @@ class Ale:
         return self.dataframe
 
     def sort_rows(self, sort_by_columns: []):
+
+        """sorts ALE rows by specified columns"""
 
         self.dataframe = self.dataframe.sort_index(sort_by_columns)
 
@@ -238,9 +242,13 @@ class Ale:
 
     def rename_column(self, column, new_name):
 
+        """renames ALE column"""
+
         self.dataframe.rename(columns={column: new_name}, inplace=True)
 
     def set_column(self, column, value):
+
+        """sets the value of a column to a string - supourts accessing vales from other columns with {column name}"""
 
         self.dataframe[column] = value
 
@@ -260,6 +268,9 @@ class Ale:
                     self.dataframe[column][index] = value.replace(match_tag, self.dataframe[match_string][index])
 
     def regex_column(self, column, regex, mode="replace", replace=""):
+
+        """applies a regex operation to the specified column - options are 'replace' (replaces every match with
+        'replace' string), and 'match' (sets the column to only matched text) """
 
         for index, original_value in enumerate(self.dataframe[column]):
 
@@ -288,7 +299,6 @@ if __name__ == '__main__':
 
     ale1.regex_column("Aardvark", r"0+$")
     ale1.regex_column("Aardvark", r"(?<=^\d{3})", replace=".")
-
 
     print(ale1.sort_columns())
 
