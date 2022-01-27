@@ -214,7 +214,7 @@ class Ale:
 
         return "\n".join(file_output)
 
-    def sort_columns(self,):
+    def sort_columns(self, ):
 
         cols_order = sorted(self.dataframe.columns.to_list())
         self.dataframe = self.dataframe[cols_order]
@@ -257,8 +257,24 @@ class Ale:
 
             else:
                 for index, value in enumerate(self.dataframe[column]):
-
                     self.dataframe[column][index] = value.replace(match_tag, self.dataframe[match_string][index])
+
+    def regex_column(self, column, regex, mode="replace", replace=""):
+
+        for index, original_value in enumerate(self.dataframe[column]):
+
+            new_value = "new_value"
+
+            if mode == "replace":
+                new_value = re.sub(regex, replace, original_value)
+                print("replace", original_value, replace)
+
+            elif mode == "match":
+
+                matches = re.findall(regex, original_value)
+                new_value = "".join(matches)
+
+            self.dataframe[column][index] = new_value
 
 
 if __name__ == '__main__':
@@ -268,6 +284,12 @@ if __name__ == '__main__':
 
     ale2 = Ale("Mini Raw missing .ale")
 
-    ale1.set_column("Aardvark", "{ISO}_{Shutter}")
+    ale1.set_column("Aardvark", "{Shutter}")
 
-    print(ale1)
+    ale1.regex_column("Aardvark", r"0+$")
+    ale1.regex_column("Aardvark", r"(?<=^\d{3})", replace=".")
+
+
+    print(ale1.sort_columns())
+
+    print(r"(?=\d\d$)")
