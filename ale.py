@@ -89,17 +89,17 @@ class Ale:
         merged_ale = Ale()
 
         if self.dataframe.empty:
-            merged_ale = other.dataframe.copy()
+            merged_ale = other.meta_dataframe.copy()
 
         else:
-            merged_ale.dataframe = pandas.concat([self.dataframe, other.dataframe], axis=0, ignore_index=True)
+            merged_ale.dataframe = pandas.concat([self.dataframe, other.meta_dataframe], axis=0, ignore_index=True)
 
         if inplace:
             self.dataframe = merged_ale.dataframe
 
         if return_errors:
             cols_self = set(self.dataframe.columns)
-            cols_other = set(other.dataframe.columns)
+            cols_other = set(other.meta_dataframe.columns)
 
             missing_from_self = cols_other - cols_self
             missing_from_other = cols_self - cols_other
@@ -119,10 +119,10 @@ class Ale:
         merged_ale = Ale()
 
         if self.dataframe.empty:
-            merged_ale.dataframe = other.dataframe.copy()
+            merged_ale.dataframe = other.meta_dataframe.copy()
 
         else:
-            merged_ale.dataframe = pandas.merge(self.dataframe, other.dataframe, how="outer", on=match_on,
+            merged_ale.dataframe = pandas.merge(self.dataframe, other.meta_dataframe, how="outer", on=match_on,
                                                 suffixes=("", "_%2"), indicator="%from_ale")
 
         if inplace:
