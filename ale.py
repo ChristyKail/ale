@@ -1,6 +1,5 @@
 import re
 
-import columns as columns
 import pandas
 import os
 import csv
