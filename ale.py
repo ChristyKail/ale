@@ -21,14 +21,14 @@ class Ale:
 
     def __repr__(self):
 
-        to_return = str()
+        to_return = os.path.basename(self.filename) + '\n'
 
         for index, value in self.heading.items():
             to_return = to_return + f'{index}\t{value}\n'
 
         to_return = to_return + "\n"
 
-        to_return = to_return + self.dataframe.to_string()
+        to_return = to_return + self.dataframe.to_string(justify='justify')
 
         return to_return
 
@@ -43,8 +43,6 @@ class Ale:
         self.filename = filename
 
         skip_rows = []
-
-        index_priority = ["Name", "Labroll", "Tape", "Start"]
 
         with open(filename, "r") as file_handler:
 
@@ -72,12 +70,7 @@ class Ale:
                     self.heading[add_to_heading[0]] = add_to_heading[1]
 
         self.dataframe = pandas.read_csv(filename, sep="\t", skiprows=skip_rows, dtype=str, engine="python",
-                                         keep_default_na=False, index_col=0)
-
-        for value in index_priority:
-            if value in self.dataframe:
-                self.dataframe.set_index(value, inplace=True)
-                break
+                                         keep_default_na=False)
 
         self.dataframe = self.dataframe.loc[:, ~self.dataframe.columns.str.contains('^Unnamed')]
 
@@ -88,17 +81,17 @@ class Ale:
         merged_ale = Ale()
 
         if self.dataframe.empty:
-            merged_ale = other.meta_dataframe.copy()
+            merged_ale = other.dataframe.copy()
 
         else:
-            merged_ale.dataframe = pandas.concat([self.dataframe, other.meta_dataframe], axis=0, ignore_index=True)
+            merged_ale.dataframe = pandas.concat([self.dataframe, other.dataframe], axis=0, ignore_index=True)
 
         if inplace:
             self.dataframe = merged_ale.dataframe
 
         if return_errors:
             cols_self = set(self.dataframe.columns)
-            cols_other = set(other.meta_dataframe.columns)
+            cols_other = set(other.dataframe.columns)
 
             missing_from_self = cols_other - cols_self
             missing_from_other = cols_self - cols_other
@@ -118,11 +111,11 @@ class Ale:
         merged_ale = Ale()
 
         if self.dataframe.empty:
-            merged_ale.dataframe = other.meta_dataframe.copy()
+            merged_ale.dataframe = other.dataframe.copy()
 
         else:
-            merged_ale.dataframe = pandas.merge(self.dataframe, other.meta_dataframe, how="outer", on=match_on,
-                                                suffixes=("", "_%2"), indicator="%from_ale")
+            merged_ale.dataframe = pandas.merge(self.dataframe, other.dataframe, how="outer", on=match_on,
+                                                suffixes=("", "_%2"), indicator=True)
 
         if inplace:
             self.dataframe = merged_ale.dataframe
@@ -131,18 +124,17 @@ class Ale:
 
             # check for rows that only exist in one dataframe
 
-            diff_df = merged_ale.dataframe.loc[merged_ale.dataframe['%from_ale'] != 'both'].copy()
+            diff_df = merged_ale.dataframe.loc[merged_ale.dataframe['_merge'] != 'both'].copy()
 
             diff_df["Match"] = ""
-            diff_df.reset_index(inplace=True)
 
             for col in match_on:
                 diff_df["Match"] = diff_df["Match"] + " " + diff_df[col]
 
             left_only = [value for index, value in enumerate(diff_df["Match"]) if
-                         diff_df["%from_ale"][index] == "left_only"]
+                         diff_df["_merge"][index] == "left_only"]
             right_only = [value for index, value in enumerate(diff_df["Match"]) if
-                          diff_df["%from_ale"][index] == "right_only"]
+                          diff_df["_merge"][index] == "right_only"]
 
             # check for columns that are duplicated
 
@@ -154,7 +146,7 @@ class Ale:
 
         merged_ale.heading = self.heading
 
-        merged_ale.dataframe.drop(['%from_ale'], axis=1)
+        merged_ale.dataframe.drop(['_merge'], axis=1)
 
         return merged_ale
 
@@ -176,8 +168,7 @@ class Ale:
 
         """save ALE data to CSV file on disk"""
 
-        self.dataframe.to_csv(filename, sep='\t', index=False, header=True, quoting=csv.QUOTE_NONE,
-                              columns=list(self.dataframe))
+        self.dataframe.to_csv(filename, sep='\t', index=False, quoting=csv.QUOTE_NONE)
 
     def to_file(self, filename):
 
@@ -247,7 +238,7 @@ class Ale:
 
     def set_column(self, column, value):
 
-        """sets the value of a column to a string - supourts accessing vales from other columns with {column name}"""
+        """sets the value of a column to a string - supports accessing values from other columns with {column name}"""
 
         self.dataframe[column] = value
 
@@ -257,16 +248,19 @@ class Ale:
 
             match_string = match_tag.strip("{").strip("}")
 
+            if match_string == column:
+                raise ValueError("Cannot set column to itself")
+
             if match_string not in self.dataframe.columns:
 
                 print(self.dataframe.columns)
                 raise ValueError(f"{match_string} isn't in the dataframe")
 
             else:
-                for index, value in enumerate(self.dataframe[column]):
-                    self.dataframe[column][index] = value.replace(match_tag, self.dataframe[match_string][index])
+                for index, contents in enumerate(self.dataframe[column]):
+                    self.dataframe.loc[:, (column, index)] = contents.replace(match_tag, self.dataframe[match_string][index])
 
-    def regex_column(self, column, regex, mode="replace", replace=""):
+    def regex_column(self, column, regex, mode="match", replace=""):
 
         """applies a regex operation to the specified column - options are 'replace' (replaces every match with
         'replace' string), and 'match' (sets the column to only matched text) """
@@ -284,21 +278,62 @@ class Ale:
                 matches = re.findall(regex, original_value)
                 new_value = "".join(matches)
 
-            self.dataframe[column][index] = new_value
+            self.dataframe.loc[:, (column, index)] = new_value
+
+
+def load_folder(folder_name):
+    """returns a list of ALE objects from a folder"""
+
+    file_list = os.listdir(folder_name)
+
+    ale_file_list = [os.path.join(folder_name, x) for x in file_list if x.endswith('.ale') or x.endswith(".ALE")]
+
+    ale_list = load_list(ale_file_list)
+
+    return ale_list
+
+
+def load_list(ale_file_list):
+    """returns a list of ALE objects from a list of filenames"""
+
+    ale_list = []
+
+    for ale_file in ale_file_list:
+        ale_list.append(Ale(ale_file))
+
+    return ale_list
+
+
+def append_multiple(ales):
+    """merge a list of ALE objects into a single ALE object"""
+
+    merged_ale = ales[0]
+
+    for index, this_ale in enumerate(ales):
+
+        if index == 0:
+            continue
+
+        if list(merged_ale.append(this_ale, return_errors=True))[0]:
+            print("error")
+
+        merged_ale.append(this_ale, inplace=True)
+
+    return merged_ale
 
 
 if __name__ == '__main__':
-    # NOT PART OF THE MODULE, FOR TESTING ONLY
 
-    ale1 = Ale("Mini Raw all.ale")
+    dr = append_multiple(load_folder('/Volumes/CK_SSD/Sample footage/ALEs/ALE/DR'))
+    ss = append_multiple(load_folder('/Volumes/CK_SSD/Sample footage/ALEs/ALE/SS'))
 
-    ale2 = Ale("Mini Raw missing .ale")
+    errors = dr.merge(ss, return_errors=True)
 
-    ale1.set_column("Aardvark", "{Shutter}")
+    for dupe in errors[3]:
+        ss.rename_column(dupe, f'{dupe}_SS')
 
-    ale1.regex_column("Aardvark", r"0+$")
-    ale1.regex_column("Aardvark", r"(?<=^\d{3})", replace=".")
+    merged = dr.merge(ss)
+    merged.sort_columns()
 
-    print(ale1.sort_columns())
-
-    print(r"(?=\d\d$)")
+    merged.to_csv('output.csv')
+    merged.to_file('output.csv')
