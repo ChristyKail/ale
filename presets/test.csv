@@ -1,0 +1,6 @@
+TYPE,Column,Parameters
+RENAME,Name,Shot Name
+SET,Shot,{Scene}-{Take}
+REMATCH,Display Name,\d{7}-\d{7}
+RENAME,Display Name,Frame Range
+INCLUDE,Start,End,Tape,ASC_SOP,ASC_SAT,Scene,Take,Frame Range
