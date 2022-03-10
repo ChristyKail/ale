@@ -42,7 +42,7 @@ class AleMacrosApp(tk.Tk):
 
         # macro selector
         self.combo_macro = ttk.Combobox(self, values=self.macro_list, width=20, state="readonly")
-        self.combo_macro.current(0)
+        self.combo_macro.set("None")
         self.combo_macro.grid(column=1, row=1, columnspan=2, sticky="EW")
 
         btn_width = 10
@@ -81,16 +81,18 @@ class AleMacrosApp(tk.Tk):
 
         preset_name = self.combo_macro.get()
 
-        return os.path.join(self.preset_folder, preset_name)
+        return os.path.join(self.preset_folder, f'{preset_name}.csv')
 
     def run_current(self):
 
         try:
-            ale_macro.AleMacro(self.get_current_macro(), self.loaded_ale)
+            ale_macro.AleMacro(self.get_current_macro(), self.loaded_ale, manager=self)
         except ale_macro.AleMacroException as exception:
-            messagebox.showerror('Error', message=exception.message)
-
-        self.update_preview()
+            messagebox.showerror('AleMacroException', message=exception.message)
+        except ale.AleException as exception:
+            messagebox.showerror('AleException', message=exception.message)
+        else:
+            self.update_preview()
 
     def single_run(self):
 
@@ -136,6 +138,11 @@ class AleMacrosApp(tk.Tk):
                                                   "respective SS and DR folders")
             return
 
+        errors = dr_ale_obj.merge(ss_ale_obj, return_errors=True)
+
+        if len(errors[1]) or len(errors[2]):
+            self.log('The following clips have no matches:\n'+'\n'.join(errors[1])+'\n'.join(errors[2]))
+
         self.loaded_ale = dr_ale_obj.merge(ss_ale_obj)
 
         self.run_current()
@@ -173,6 +180,9 @@ class AleMacrosApp(tk.Tk):
         self.text_preview['state'] = 'disabled'
         self.update()
 
+    def log(self, message):
+        messagebox.showinfo("ALE Macro Log", message)
+
 
 def get_macros():
     macro_list = []
@@ -182,7 +192,9 @@ def get_macros():
     for file in os.listdir(preset_folder):
 
         if file.endswith('.csv'):
-            macro_list.append(file)
+            macro_list.append(file.replace('.csv', ''))
+
+    macro_list.sort()
 
     return preset_folder, macro_list
 
