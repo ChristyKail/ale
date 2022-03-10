@@ -115,7 +115,7 @@ class Ale:
 
         else:
             merged_ale.dataframe = pandas.merge(self.dataframe, other.dataframe, how="outer", on=match_on,
-                                                suffixes=("", "_%2"), indicator=True)
+                                                suffixes=("", "_2"), indicator=True)
 
         if inplace:
             self.dataframe = merged_ale.dataframe
@@ -125,20 +125,21 @@ class Ale:
             # check for rows that only exist in one dataframe
 
             diff_df = merged_ale.dataframe.loc[merged_ale.dataframe['_merge'] != 'both'].copy()
+            diff_df.reset_index(drop=True, inplace=True)
 
             diff_df["Match"] = ""
 
             for col in match_on:
                 diff_df["Match"] = diff_df["Match"] + " " + diff_df[col]
 
-            left_only = [value for index, value in enumerate(diff_df["Match"]) if
-                         diff_df["_merge"][index] == "left_only"]
-            right_only = [value for index, value in enumerate(diff_df["Match"]) if
-                          diff_df["_merge"][index] == "right_only"]
+            left_only = [value for index, value in enumerate(diff_df["Match"])
+                         if diff_df["_merge"][index] == "left_only"]
+            right_only = [value for index, value in enumerate(diff_df["Match"])
+                          if diff_df["_merge"][index] == "right_only"]
 
             # check for columns that are duplicated
 
-            duplicate_columns = [value.strip("_%2") for value in diff_df.columns if "_%2" in value]
+            duplicate_columns = [value.strip("_2") for value in diff_df.columns if "_2" in value]
 
             # Return number of mismatches,  list of items in self with no match, list of items in other with no match,
             # list of duplicates
@@ -222,13 +223,13 @@ class Ale:
     def duplicate_col(self, source_column, destination_column, overwrite=True):
 
         if source_column not in self.dataframe.columns:
-            raise ValueError(f'{source_column} not in ALE')
+            raise AleException(f'{source_column} not in ALE')
 
         if destination_column not in self.dataframe.columns or overwrite:
             self.dataframe[destination_column] = self.dataframe[source_column]
 
         else:
-            raise ValueError(f'{destination_column} already in ALE, use overwrite option to set anyway')
+            raise AleException(f'{destination_column} already in ALE, use overwrite option to set anyway')
 
     def rename_column(self, column, new_name):
 
@@ -240,6 +241,8 @@ class Ale:
 
         """sets the value of a column to a string - supports accessing values from other columns with {column name}"""
 
+        print(f'Set {column} to {value}')
+
         self.dataframe[column] = value
 
         dynamic_matches = re.findall(r'{[a-zA-Z0-9 _-]+}', value)
@@ -249,16 +252,18 @@ class Ale:
             match_string = match_tag.strip("{").strip("}")
 
             if match_string == column:
-                raise ValueError("Cannot set column to itself")
+                raise AleException("Cannot set column to itself")
 
             if match_string not in self.dataframe.columns:
 
-                print(self.dataframe.columns)
-                raise ValueError(f"{match_string} isn't in the dataframe")
+                for index, contents in enumerate(self.dataframe[column]):
+                    self.dataframe.loc[:, (column, index)] = contents.replace(match_tag, "NO DATA")
+
+                raise AleException(f"{match_string} isn't in the dataframe")
 
             else:
                 for index, contents in enumerate(self.dataframe[column]):
-                    self.dataframe.loc[:, (column, index)] = contents.replace(match_tag, self.dataframe[match_string][index])
+                    self.dataframe.loc[:, (column, index)] = contents.replace(match_tag, str(self.dataframe[match_string][index]))
 
     def regex_column(self, column, regex, mode="match", replace=""):
 
@@ -271,7 +276,6 @@ class Ale:
 
             if mode == "replace":
                 new_value = re.sub(regex, replace, original_value)
-                print("replace", original_value, replace)
 
             elif mode == "match":
 
@@ -320,6 +324,12 @@ def append_multiple(ales):
         merged_ale.append(this_ale, inplace=True)
 
     return merged_ale
+
+
+class AleException(Exception):
+    def __init__(self, message="ALE error"):
+        super().__init__(message)
+        self.message = message
 
 
 if __name__ == '__main__':
