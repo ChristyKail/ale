@@ -4,6 +4,8 @@ import re
 
 import pandas
 
+import ale
+
 
 class Ale:
 
@@ -81,10 +83,12 @@ class Ale:
         merged_ale = Ale()
 
         if self.dataframe.empty:
-            merged_ale = other.dataframe.copy()
+            merged_ale.dataframe = other.dataframe.copy()
+            merged_ale.heading = other.heading
 
         else:
             merged_ale.dataframe = pandas.concat([self.dataframe, other.dataframe], axis=0, ignore_index=True)
+            merged_ale.heading = self.heading
 
         if inplace:
             self.dataframe = merged_ale.dataframe
@@ -97,7 +101,7 @@ class Ale:
             missing_from_other = cols_self - cols_other
 
             # Return number of missing, list of missing from self, list of missing from other
-            return (len(missing_from_self) + len(missing_from_other)), missing_from_self, missing_from_other
+            return (len(missing_from_self) + len(missing_from_other)), list(missing_from_self), list(missing_from_other)
 
         return merged_ale
 
@@ -146,8 +150,7 @@ class Ale:
             return len(diff_df), left_only, right_only, duplicate_columns
 
         merged_ale.heading = self.heading
-
-        merged_ale.dataframe.drop(['_merge'], axis=1)
+        merged_ale.dataframe.drop(['_merge'], axis=1, inplace=True)
 
         return merged_ale
 
@@ -243,7 +246,7 @@ class Ale:
 
         print(f'Set {column} to {value}')
 
-        self.dataframe[column] = value
+        self.dataframe['_temp'] = value
 
         dynamic_matches = re.findall(r'{[a-zA-Z0-9 _-]+}', value)
 
@@ -251,19 +254,21 @@ class Ale:
 
             match_string = match_tag.strip("{").strip("}")
 
-            if match_string == column:
-                raise AleException("Cannot set column to itself")
-
             if match_string not in self.dataframe.columns:
-
-                for index, contents in enumerate(self.dataframe[column]):
-                    self.dataframe.loc[:, (column, index)] = contents.replace(match_tag, "NO DATA")
 
                 raise AleException(f"{match_string} isn't in the dataframe")
 
             else:
-                for index, contents in enumerate(self.dataframe[column]):
-                    self.dataframe.loc[:, (column, index)] = contents.replace(match_tag, str(self.dataframe[match_string][index]))
+                for index, contents in enumerate(self.dataframe['_temp']):
+
+                    value_from_other = self.dataframe.loc[index, match_string]
+
+                    new_value = contents.replace(match_tag, value_from_other)
+
+                    self.dataframe.loc[index, '_temp'] = new_value
+
+        self.dataframe[column] = self.dataframe['_temp']
+        self.dataframe.drop('_temp', axis=1)
 
     def regex_column(self, column, regex, mode="match", replace=""):
 
@@ -282,7 +287,7 @@ class Ale:
                 matches = re.findall(regex, original_value)
                 new_value = "".join(matches)
 
-            self.dataframe.loc[:, (column, index)] = new_value
+            self.dataframe.loc[index, column] = new_value
 
 
 def load_folder(folder_name):
@@ -308,20 +313,27 @@ def load_list(ale_file_list):
     return ale_list
 
 
-def append_multiple(ales):
+def append_multiple(ales, return_errors=False):
     """merge a list of ALE objects into a single ALE object"""
 
     merged_ale = ales[0]
+    append_errors = []
 
     for index, this_ale in enumerate(ales):
 
         if index == 0:
             continue
 
-        if list(merged_ale.append(this_ale, return_errors=True))[0]:
-            print("error")
+        if return_errors:
+            count, self_missing, other_missing = merged_ale.append(this_ale, return_errors=True)
+
+            if count:
+                append_errors = append_errors + self_missing + other_missing
 
         merged_ale.append(this_ale, inplace=True)
+
+    if return_errors:
+        return list(set(append_errors))
 
     return merged_ale
 
