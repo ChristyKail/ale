@@ -4,8 +4,6 @@ import re
 
 import pandas
 
-import ale
-
 
 class Ale:
 
