@@ -64,7 +64,7 @@ class AleMacrosApp(tk.Tk):
         self.btn_ss_dr_merge.grid(column=3, row=2, padx=5, pady=5)
 
         # preview
-        self.text_preview = tk.Text(self, width=75, takefocus=0, highlightthickness=0, padx=5, pady=5,
+        self.text_preview = tk.Text(self, width=100, height=50, takefocus=0, highlightthickness=0, padx=5, pady=5,
                                     wrap='none')
         self.text_preview.grid(column=0, row=3, columnspan=4, sticky="NEW", pady=10, padx=10)
         self.text_preview['state'] = 'disabled'
@@ -116,8 +116,22 @@ class AleMacrosApp(tk.Tk):
             self.run_current()
             self.loaded_ale.to_file(self.loaded_ale.filename.replace('.ale', ' - batch processed.ale'))
 
-    def batch_append(self):
-        raise NotImplementedError()
+    def batch_append(self, return_errors=False):
+
+        ale_filenames = filedialog.askopenfilenames(filetypes=[('ALE files', '*.ale *.ALE')])
+
+        if not ale_filenames:
+            return
+
+        ale_objects = ale.load_list(ale_filenames)
+
+        errors = ale.append_multiple(ale_objects, return_errors=True)
+
+        if errors:
+            self.log('The following columns are not present in all ALEs:\n' + '\n'.join(errors))
+
+        self.loaded_ale = ale.append_multiple(ale_objects)
+        self.run_current()
 
     def ss_dr_merge(self):
 
@@ -141,7 +155,7 @@ class AleMacrosApp(tk.Tk):
         errors = dr_ale_obj.merge(ss_ale_obj, return_errors=True)
 
         if len(errors[1]) or len(errors[2]):
-            self.log('The following clips have no matches:\n'+'\n'.join(errors[1])+'\n'.join(errors[2]))
+            self.log('The following clips have no matches:\n' + '\n'.join(errors[1]) + '\n'.join(errors[2]))
 
         self.loaded_ale = dr_ale_obj.merge(ss_ale_obj)
 
@@ -176,7 +190,6 @@ class AleMacrosApp(tk.Tk):
         self.text_preview['state'] = 'normal'
         self.text_preview.delete(0.0, 'end')
         self.text_preview.insert(0.0, str(self.loaded_ale))
-        print(self.loaded_ale.dataframe.to_string(index=False))
         self.text_preview['state'] = 'disabled'
         self.update()
 
