@@ -202,7 +202,7 @@ class Ale:
 
         with open(filename, 'w') as file_handler:
             file_handler.seek(0, 0)
-            file_handler.write("\n".join(file_output))
+            file_handler.write("\n".join(file_output)+"\n")
 
         return "\n".join(file_output)
 
@@ -344,16 +344,4 @@ class AleException(Exception):
 
 if __name__ == '__main__':
 
-    dr = append_multiple(load_folder('/Volumes/CK_SSD/Sample footage/ALEs/ALE/DR'))
-    ss = append_multiple(load_folder('/Volumes/CK_SSD/Sample footage/ALEs/ALE/SS'))
-
-    errors = dr.merge(ss, return_errors=True)
-
-    for dupe in errors[3]:
-        ss.rename_column(dupe, f'{dupe}_SS')
-
-    merged = dr.merge(ss)
-    merged.sort_columns()
-
-    merged.to_csv('output.csv')
-    merged.to_file('output.csv')
+    test_ale = Ale("AVID.ALE")
