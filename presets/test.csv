@@ -1,2 +1,2 @@
 TYPE,Column,Parameters
-SET,Scene,Scene Column
+REMATCH,Shot,.+(?<!\uFFFD)

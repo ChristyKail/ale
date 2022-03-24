@@ -1,0 +1,12 @@
+TYPE,Column,Parameters
+SET,Slate,{Shot}
+SET,Shot,{Scene}-{Slate}-{Take}
+RENAME,Camera #,Camera
+RENAME,Source Resolution,Resolution
+RENAME,Roll Card #,Camroll
+RENAME,Source File Path,Filepath
+RENAME,LUT 1,Input LUT
+RENAME,LUT 2,LUT
+SET,Extraction,Makata_16mm_2K_1.33
+SET,Extraction Resolution,1480x1110
+INCLUDE,Scene,Shot,Slate,Take,Duration,End,Filepath,Name,Start,Tape,Backup 1,Backup 2,Backup 3,Comments,Display Name,Labroll,Shoot date,Shoot Day,Camera,CamRoll,Extraction,Extraction Resolution,Resolution,ASC_SAT,ASC_SOP,Input LUT,LUT

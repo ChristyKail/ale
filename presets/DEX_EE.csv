@@ -1,0 +1,10 @@
+TYPE,Column,Parameters
+SET,Episode,{Episode Name}
+SET,Slate,{Scene_2}
+RESUB,Slate,[XYV]*\d/,
+SET,Shutter,{Shutter_2}
+SET,Name,{Name_2}
+RENAME,Camera Serial #,Camera Serial
+RESUB,Resolution,\sx\s,x
+RENAME,Source File Path,Filepath
+INCLUDE,Episode,Scene,Shot,Slate,Take,Duration,End,Filepath,File Size,Filetype,Frame count,Name,Start,Tape,Color Label,Comments,Display Name,Shoot date,Shoot Day,Camera,Camera Manufacturer,Camera Serial,Camera Type,CamRoll,Codec,Colorspace,Filter,Focal Length,FPS,ISO,Lens,Sensor Fps,Shutter,White Balance,White Balance Tint,Extraction,Extraction Resolution,Height,Resolution,Width,ASC_SAT,ASC_SOP,LMT,Backup 1,Backup 2,Backup 3,PixelAspectRatio
