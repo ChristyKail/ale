@@ -166,7 +166,7 @@ class AleMacrosApp(tk.Tk):
         if not self.loaded_ale:
             messagebox.showerror('Error', 'No ALE loaded to export')
 
-        out_filename = filedialog.asksaveasfilename()
+        out_filename = filedialog.asksaveasfilename(defaultextension='.ale', filetypes=[('ALE', '.ale')])
 
         if not out_filename:
             return
@@ -178,7 +178,7 @@ class AleMacrosApp(tk.Tk):
         if not self.loaded_ale:
             messagebox.showerror('Error', 'No ALE loaded to export')
 
-        out_filename = filedialog.asksaveasfilename()
+        out_filename = filedialog.asksaveasfilename(defaultextension='.csv', filetypes=[('CSV File', '.csv')])
 
         if not out_filename:
             return
