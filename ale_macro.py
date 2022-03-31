@@ -3,25 +3,34 @@ import csv
 
 
 def run_action(ale_obj, action: [str]):
-
     AleMacro([action], ale_obj)
 
 
 class AleMacro:
 
-    def __init__(self, macro, ale_obj: ale.Ale, manager=None):
+    def __init__(self, macro, ale_obj: ale.Ale = None, manager=None):
+
+        """accepts filename or list of lists"""
 
         self.manager = manager
         self.ale_obj = ale_obj
         self.action_list = compile_macro_list(macro)
-        self.execute_actions()
+
+        # if an input ale object has been specified, execute actions on that ale object
+        if self.ale_obj:
+            self.execute_actions()
 
     def log(self, message):
 
         if self.manager:
             self.manager.log(message)
 
-    def execute_actions(self):
+    def execute_actions(self, ale_obj=None):
+
+        """execute the actions on the marco's ale object, use the ale object passed in if specified"""
+
+        if ale_obj:
+            self.ale_obj = ale_obj
 
         """execute actions in list"""
 
