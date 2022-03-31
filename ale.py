@@ -314,12 +314,13 @@ def load_list(ale_file_list):
 def append_multiple(ales, return_errors=False):
     """merge a list of ALE objects into a single ALE object"""
 
-    merged_ale = ales[0]
+    merged_ale = None
     append_errors = []
 
     for index, this_ale in enumerate(ales):
 
         if index == 0:
+            merged_ale = this_ale
             continue
 
         if return_errors:
