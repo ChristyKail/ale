@@ -77,7 +77,7 @@ class AleMacrosApp(tk.Tk):
         self.btn_csv_out = tk.Button(self, text="Save CSV", command=self.csv_out, width=btn_width)
         self.btn_csv_out.grid(column=2, row=4, padx=5, pady=5)
 
-    def get_current_macro(self):
+    def get_current_macro_fname(self):
 
         preset_name = self.combo_macro.get()
 
@@ -86,7 +86,8 @@ class AleMacrosApp(tk.Tk):
     def run_current(self):
 
         try:
-            ale_macro.AleMacro(self.get_current_macro(), self.loaded_ale, manager=self)
+            macro = ale_macro.AleMacro(self.get_current_macro_fname(), self.loaded_ale, manager=self)
+            print(macro.action_list)
         except ale_macro.AleMacroException as exception:
             messagebox.showerror('AleMacroException', message=exception.message)
         except ale.AleException as exception:
@@ -116,7 +117,7 @@ class AleMacrosApp(tk.Tk):
             self.run_current()
             self.loaded_ale.to_file(self.loaded_ale.filename.replace('.ale', ' - batch processed.ale'))
 
-    def batch_append(self, return_errors=False):
+    def batch_append(self):
 
         ale_filenames = filedialog.askopenfilenames(filetypes=[('ALE files', '*.ale *.ALE')])
 
@@ -128,7 +129,7 @@ class AleMacrosApp(tk.Tk):
         errors = ale.append_multiple(ale_objects, return_errors=True)
 
         if errors:
-            self.log('The following columns are not present in all ALEs:\n' + '\n'.join(errors))
+            self.log('The following columns are only present in some ALEs:\n' + '\n'.join(errors))
 
         self.loaded_ale = ale.append_multiple(ale_objects)
         self.run_current()
