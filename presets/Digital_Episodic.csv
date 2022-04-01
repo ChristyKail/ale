@@ -1,14 +1,23 @@
 TYPE,Column,Parameters
-SET,Episode,{Episode Name}
-SET,Slate,{Scene_2}
-RESUB,Slate,[XYV]*\d/,
-SET,Shutter,{Shutter_2}
+
 SET,Name,{Name_2}
+RENAME,Episode Name,Episode
+RENAME,Scene_2,Slate
+RESUB,Slate,.+/,
+
+RENAME,Source File Path,Filepath
+SET,Labroll,{Tape}
+
+SET,Shutter,{Shutter_2}
 RENAME,Camera Serial #,Camera Serial
-RESUB,Resolution,\s
+RENAME,Aspect Ratio Notes,PixelAspectRatio
+RENAME,LUT Used, LMT
+
 SET,Height,{Resolution}
 RESUB,Height,\d+x,
 SET,Width,{Resolution}
 RESUB,Width,x\d+,
-RENAME,UNC,Filepath
-INCLUDE,Episode,Scene,Shot,Slate,Take,Duration,End,Filepath,File Size,Filetype,Frame count,Name,Start,Tape,Color Label,Comments,Display Name,Shoot Date,Shoot Day,Camera,Camera Manufacturer,Camera Serial,Camera Type,CamRoll,Codec,Colorspace,Filter,Focal Length,FPS,ISO,Lens,Sensor Fps,Shutter,White Balance,White Balance Tint,Extraction,Extraction Resolution,Height,Resolution,Width,ASC_SAT,ASC_SOP,Input LUT,LMT,LUT
+
+RESUB,Resolution,\s,
+
+INCLUDE,Episode,Scene,Shot,Slate,Take,Duration,End,Filepath,File Size,Filetype,Frame count,Name,Start,Tape,Color Label,Comments,Display Name,Shoot Date,Shoot Day,Camera,Camera Manufacturer,Camera Serial,Camera Type,CamRoll,Codec,Colorspace,Filter,Focal Length,FPS,ISO,Lens,Sensor Fps,Shutter,White Balance,White Balance Tint,Extraction,Extraction Resolution,Height,Resolution,Width,ASC_SAT,ASC_SOP,Input LUT,LMT

@@ -54,6 +54,9 @@ class AleMacro:
             elif action[0] == 'INCLUDE':
                 self.include(action)
 
+            elif action[0] == 'HEADER':
+                self.edit_header(action)
+
             else:
                 raise AleMacroException(f'{action[0]}: unrecognized macro action')
 
@@ -110,6 +113,12 @@ class AleMacro:
 
         if missing:
             self.log("The following INCLUDE columns are missing:\n" + "\n".join(missing))
+
+    def edit_header(self, macro):
+
+        self.verify_macro_action(macro, 3)
+
+        self.ale_obj.heading[macro[1]] = macro[2]
 
 
 class AleMacroException(Exception):

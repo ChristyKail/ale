@@ -236,7 +236,11 @@ class Ale:
 
         """renames ALE column"""
 
-        self.dataframe.rename(columns={column: new_name}, inplace=True)
+        if new_name not in self.dataframe.columns:
+            self.dataframe.rename(columns={column: new_name}, inplace=True)
+
+        else:
+            raise AleException(f'{new_name} already in ALE, use SET instead')
 
     def set_column(self, column, value):
 
@@ -259,7 +263,7 @@ class Ale:
             else:
                 for index, contents in enumerate(self.dataframe['_temp']):
 
-                    value_from_other = self.dataframe.loc[index, match_string]
+                    value_from_other = str(self.dataframe.loc[index, match_string])
 
                     new_value = contents.replace(match_tag, value_from_other)
 
