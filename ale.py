@@ -4,7 +4,8 @@ import re
 
 import pandas
 
-version = "1.0.0"
+__version__ = "1.0.0"
+
 
 class Ale:
 
@@ -203,7 +204,7 @@ class Ale:
 
         with open(filename, 'w') as file_handler:
             file_handler.seek(0, 0)
-            file_handler.write("\n".join(file_output)+"\n")
+            file_handler.write("\n".join(file_output) + "\n")
 
         return "\n".join(file_output)
 
@@ -261,7 +262,6 @@ class Ale:
 
             else:
                 for index, contents in enumerate(self.dataframe['_temp']):
-
                     value_from_other = str(self.dataframe.loc[index, match_string])
 
                     new_value = contents.replace(match_tag, value_from_other)
@@ -347,5 +347,4 @@ class AleException(Exception):
 
 
 if __name__ == '__main__':
-
     test_ale = Ale("AVID.ALE")

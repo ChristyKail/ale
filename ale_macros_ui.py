@@ -22,7 +22,9 @@ class AleMacrosApp(tk.Tk):
     # noinspection PyAttributeOutsideInit
     def setup_ui(self):
 
-        self.title("Cinelab Film & Digital - ALE Macros")
+        version = ale.__version__
+
+        self.title(f"Cinelab Film & Digital - ALE Macros - version {version}")
 
         try:
             self.logo_image = tk.PhotoImage(file="CFD-Icon_Standard.png")
