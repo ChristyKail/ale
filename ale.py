@@ -4,6 +4,7 @@ import re
 
 import pandas
 
+version = "1.0.0"
 
 class Ale:
 
@@ -245,8 +246,6 @@ class Ale:
     def set_column(self, column, value):
 
         """sets the value of a column to a string - supports accessing values from other columns with {column name}"""
-
-        print(f'Set {column} to {value}')
 
         self.dataframe['_temp'] = value
 
