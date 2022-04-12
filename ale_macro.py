@@ -32,9 +32,9 @@ class AleMacro:
         if ale_obj:
             self.ale_obj = ale_obj
 
-        """execute actions in list"""
-
         for action in self.action_list:
+
+            print(action)
 
             if action[0] == 'RENAME':
                 self.rename(action)
@@ -57,6 +57,9 @@ class AleMacro:
             elif action[0] == 'HEADER':
                 self.edit_header(action)
 
+            elif action[0] == 'MAP':
+                self.map(action)
+
             else:
                 raise AleMacroException(f'{action[0]}: unrecognized macro action')
 
@@ -68,7 +71,8 @@ class AleMacro:
             raise AleMacroException(f'{action} is not a valid action')
 
         if action[1] not in self.ale_obj.dataframe.columns:
-            raise AleMacroException(f'{action} - {action[1]} is not in the dataframe')
+            raise AleMacroException(
+                f'{action} - {action[1]} is not in the dataframe' + '\n'.join(sorted(self.ale_obj.dataframe.columns)))
 
     def rename(self, macro):
 
@@ -120,6 +124,21 @@ class AleMacro:
 
         self.ale_obj.heading[macro[1]] = macro[2]
 
+    def map(self, macro):
+
+        self.verify_macro_action(macro, 4)
+        if len(macro) % 2 != 0:
+            raise AleMacroException(f'{macro} is not a valid action')
+
+        for map_key_value in macro[2:]:
+            map_from, map_to = map_key_value.split(':')
+
+            print(map_from, map_to)
+
+            self.ale_obj.dataframe[macro[1]] = self.ale_obj.dataframe[macro[1]].str.replace(map_from, map_to)
+
+            print(self.ale_obj.dataframe[macro[1]])
+
 
 class AleMacroException(Exception):
     def __init__(self, message="ALE Macro error"):
@@ -133,11 +152,17 @@ def list_from_file(macro_file):
     with open(macro_file, "r") as file_handler:
         action_list = []
 
-        reader = csv.reader(file_handler)
+        reader = csv.reader(file_handler, delimiter=',')
 
         next(reader)
 
         for line in reader:
+
+            if len(line) == 0:
+                continue
+            if line[0].startswith('#'):
+                continue
+
             this_action = [x for x in line]
             action_list.append(this_action)
 
