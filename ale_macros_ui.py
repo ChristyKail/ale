@@ -115,7 +115,22 @@ class AleMacrosApp(tk.Tk):
         for ale_filename in ale_filenames:
             self.loaded_ale = ale.Ale(ale_filename)
             self.run_current()
-            self.loaded_ale.to_file(self.loaded_ale.filename.replace('.ale', ' - batch processed.ale'))
+
+            new_file_name = self.loaded_ale.filename
+            macro_name = self.combo_macro.get()
+
+            if new_file_name.endswith('.ale'):
+                new_file_name = new_file_name.replace('.ale', f'_{macro_name}.ale')
+
+            elif new_file_name.endswith('.ALE'):
+                new_file_name = new_file_name.replace('.ALE', f'_{macro_name}.ALE')
+
+            else:
+                new_file_name = new_file_name + f'_{macro_name}.ale'
+
+            self.loaded_ale.to_file(new_file_name)
+
+            print(f'Saved {new_file_name}')
 
     def batch_append(self):
 
