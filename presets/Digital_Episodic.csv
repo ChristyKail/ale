@@ -1,7 +1,7 @@
 TYPE,Column,Parameters
 
 SET,Name,{Name_2}
-RENAME,Episode Name,Episode
+SET,Episode,{Episode Name}
 RENAME,Scene_2,Slate
 RESUB,Slate,.+/,
 
@@ -11,13 +11,12 @@ SET,Labroll,{Tape}
 SET,Shutter,{Shutter_2}
 RENAME,Camera Serial #,Camera Serial
 RENAME,Aspect Ratio Notes,PixelAspectRatio
-RENAME,LUT Used, LMT
+RENAME,LUT Used,LMT
 
+RESUB,Resolution,\s,
 SET,Height,{Resolution}
 RESUB,Height,\d+x,
 SET,Width,{Resolution}
 RESUB,Width,x\d+,
 
-RESUB,Resolution,\s,
-
-INCLUDE,Episode,Scene,Shot,Slate,Take,Duration,End,Filepath,File Size,Filetype,Frame count,Name,Start,Tape,Color Label,Comments,Display Name,Shoot Date,Shoot Day,Camera,Camera Manufacturer,Camera Serial,Camera Type,CamRoll,Codec,Colorspace,Filter,Focal Length,FPS,ISO,Lens,Sensor Fps,Shutter,White Balance,White Balance Tint,Extraction,Extraction Resolution,Height,Resolution,Width,ASC_SAT,ASC_SOP,Input LUT,LMT
+INCLUDE,Episode,Scene,Shot,Slate,Take,Duration,End,Filepath,File Size,Filetype,Frame count,Name,Start,Tape,Color Label,Comments,Display Name,Shoot Date,Shoot Day,Camera,Camera Manufacturer,Camera Serial,Camera Type,CamRoll,Codec,Colorspace,Focal Length,FPS,ISO,Lens,Sensor Fps,Shutter,White Balance,White Balance Tint,,Resolution,Extraction,Extraction Resolution,Width,Height,ASC_SAT,ASC_SOP,Input LUT,LMT

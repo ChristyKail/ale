@@ -1,2 +1,0 @@
-TYPE,Column,Parameters
-REMATCH,Shot,.+(?<!\uFFFD)
