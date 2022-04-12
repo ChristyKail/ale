@@ -4,6 +4,8 @@ import re
 
 import pandas
 
+
+# This should increment whenever any element in the ALE macros package is changed.
 __version__ = "1.0.0"
 
 
