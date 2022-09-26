@@ -3,10 +3,13 @@ import os
 import re
 
 import pandas
-
+import timecode
 
 # This should increment whenever any element in the ALE macros package is changed.
-__version__ = "1.0.0"
+
+__version__ = "1.2.0"
+
+# v1.2.0 - added support for ALEs from OSD with no blank lines
 
 
 class Ale:
@@ -46,32 +49,38 @@ class Ale:
         self.name = os.path.basename(filename)
         self.filename = filename
 
-        skip_rows = []
+        rows_to_load = []
 
         with open(filename, "r") as file_handler:
 
-            for line_index, line_content in enumerate(file_handler):
+            ale_fie_lines = file_handler.readlines()
 
-                if line_content.strip() == "Column":
-                    skip_rows = list(range(0, line_index + 1))
-                    skip_rows.append(line_index + 2)
-                    skip_rows.append(line_index + 3)
+            heading = False
 
+            for line_index, line_content in enumerate(ale_fie_lines):
+
+                if line_content.strip() == "":
+                    continue
+
+                elif line_content.strip() == "Heading":
+                    heading = True
+
+                elif line_content.strip() == "Column":
+                    heading = False
+                    rows_to_load.append(line_index + 1)
+
+                elif line_content.strip() == "Data":
+                    rows_to_load += range(line_index + 1, len(ale_fie_lines))
+                    # this is the last element we're interested in, break out of the loop
                     break
 
-                if line_content.strip() == "Heading":
-
-                    pass
-
-                elif line_content.strip() == "":
-
-                    pass
-
-                else:
-
+                elif heading:
+                    print(line_content)
                     add_to_heading = line_content.strip().split(maxsplit=1)
-
                     self.heading[add_to_heading[0]] = add_to_heading[1]
+
+            # all lines apart from rows to load
+            skip_rows = [x for x in range(0, len(ale_fie_lines)) if x not in rows_to_load]
 
         self.dataframe = pandas.read_csv(filename, sep="\t", skiprows=skip_rows, dtype=str, engine="python",
                                          keep_default_na=False)
@@ -289,6 +298,18 @@ class Ale:
 
                 matches = re.findall(regex, original_value)
                 new_value = "".join(matches)
+
+            self.dataframe.loc[index, column] = new_value
+
+    def timecode_to_frame_number(self, column):
+
+        """converts timecode to frame number"""
+
+        for index, original_value in enumerate(self.dataframe[column]):
+            new_value = "new_value"
+
+            new_value = timecode.Timecode(self.heading["FPS"], original_value).frame_number
+            new_value = str(new_value).zfill(7)
 
             self.dataframe.loc[index, column] = new_value
 
