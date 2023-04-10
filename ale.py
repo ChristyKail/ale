@@ -75,7 +75,6 @@ class Ale:
                     break
 
                 elif heading:
-                    print(line_content)
                     add_to_heading = line_content.strip().split(maxsplit=1)
                     self.heading[add_to_heading[0]] = add_to_heading[1]
 
@@ -237,13 +236,13 @@ class Ale:
     def duplicate_col(self, source_column, destination_column, overwrite=True):
 
         if source_column not in self.dataframe.columns:
-            raise AleException(f'{source_column} not in ALE')
+            raise AleException(f'ALE Duplicate COl\n{source_column} not in ALE')
 
         if destination_column not in self.dataframe.columns or overwrite:
             self.dataframe[destination_column] = self.dataframe[source_column]
 
         else:
-            raise AleException(f'{destination_column} already in ALE, use overwrite option to set anyway')
+            raise AleException(f'ALE Duplicate COl\n{destination_column} already in ALE, use overwrite option to set anyway')
 
     def rename_column(self, column, new_name):
 
@@ -253,7 +252,7 @@ class Ale:
             self.dataframe.rename(columns={column: new_name}, inplace=True)
 
         else:
-            raise AleException(f'{new_name} already in ALE, use SET instead')
+            raise AleException(f'ALE Rename Column\n{new_name} already in ALE, use SET instead')
 
     def set_column(self, column, value):
 
@@ -269,7 +268,7 @@ class Ale:
 
             if match_string not in self.dataframe.columns:
 
-                raise AleException(f"{match_string} isn't in the dataframe")
+                raise AleException(f"ALE Set Column\nDynamic tag {match_string} isn't in the dataframe")
 
             else:
                 for index, contents in enumerate(self.dataframe['_temp']):

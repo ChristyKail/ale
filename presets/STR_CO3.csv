@@ -1,3 +1,0 @@
-TYPE,Column,Parameters
-SET,Source File,{Filename}
-RESUB,Source File,([A-Z]+\d{3}).*(\d{7}),\1/4152x2372/\1.\2.dpx

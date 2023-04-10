@@ -24,6 +24,7 @@ class AleMacro:
 
         if self.manager:
             self.manager.log(message)
+        print(message)
 
     def execute_actions(self, ale_obj=None):
 
@@ -32,36 +33,48 @@ class AleMacro:
         if ale_obj:
             self.ale_obj = ale_obj
 
+        print("Number of actions: " + str(len(self.action_list)))
         for action in self.action_list:
-
             print(action)
 
-            if action[0] == 'RENAME':
-                self.rename(action)
+        print()
 
-            elif action[0] == 'DELETE':
-                self.delete(action)
+        for action in self.action_list:
 
-            elif action[0] == 'REMATCH':
-                self.re_match(action)
+            try:
 
-            elif action[0] == 'RESUB':
-                self.re_sub(action)
+                if action[0] == 'RENAME':
+                    self.rename(action)
 
-            elif action[0] == 'SET':
-                self.set(action)
+                elif action[0] == 'DELETE':
+                    self.delete(action)
 
-            elif action[0] == 'INCLUDE':
-                self.include(action)
+                elif action[0] == 'REMATCH':
+                    self.re_match(action)
 
-            elif action[0] == 'HEADER':
-                self.edit_header(action)
+                elif action[0] == 'RESUB':
+                    self.re_sub(action)
 
-            elif action[0] == 'MAP':
-                self.map(action)
+                elif action[0] == 'SET':
+                    self.set(action)
 
-            else:
-                raise AleMacroException(f'{action[0]}: unrecognized macro action')
+                elif action[0] == 'INCLUDE':
+                    self.include(action)
+
+                elif action[0] == 'HEADER':
+                    self.edit_header(action)
+
+                elif action[0] == 'MAP':
+                    self.map(action)
+
+                else:
+                    raise AleMacroException(f'{action[0]}: unrecognized macro action')
+
+            except AleMacroException as exception:
+                self.log(exception)
+
+            except ale.AleException as exception:
+                self.log(exception)
 
     def verify_macro_action(self, action: list, length: int):
 
@@ -71,8 +84,7 @@ class AleMacro:
             raise AleMacroException(f'{action} is not a valid action')
 
         if action[1] not in self.ale_obj.dataframe.columns:
-            raise AleMacroException(
-                f'{action} - {action[1]} is not in the dataframe' + '\n'.join(sorted(self.ale_obj.dataframe.columns)))
+            raise AleMacroException(f'{action}\n{action[1]} is not in the dataframe')
 
     def rename(self, macro):
 
@@ -126,18 +138,13 @@ class AleMacro:
 
     def map(self, macro):
 
-        self.verify_macro_action(macro, 4)
-        if len(macro) % 2 != 0:
+        if len(macro) < 3:
             raise AleMacroException(f'{macro} is not a valid action')
 
         for map_key_value in macro[2:]:
             map_from, map_to = map_key_value.split(':')
 
-            print(map_from, map_to)
-
             self.ale_obj.dataframe[macro[1]] = self.ale_obj.dataframe[macro[1]].str.replace(map_from, map_to)
-
-            print(self.ale_obj.dataframe[macro[1]])
 
 
 class AleMacroException(Exception):

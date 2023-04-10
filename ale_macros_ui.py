@@ -89,7 +89,6 @@ class AleMacrosApp(tk.Tk):
 
         try:
             macro = ale_macro.AleMacro(self.get_current_macro_fname(), self.loaded_ale, manager=self)
-            print(macro.action_list)
         except ale_macro.AleMacroException as exception:
             messagebox.showerror('AleMacroException', message=exception.message)
         except ale.AleException as exception:
@@ -213,6 +212,9 @@ class AleMacrosApp(tk.Tk):
 
     def log(self, message):
         messagebox.showinfo("ALE Macro Log", message)
+
+    def alert(self, message):
+        messagebox.showerror("ALERT - ALE Macro Error", message)
 
 
 def get_macros():
